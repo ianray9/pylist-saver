@@ -1,10 +1,12 @@
-from auth import auth_spotipy
+import os
+
+from playlist_saver import auth_spotipy
 
 
 def main():
     sp = auth_spotipy()
 
-    playlists = sp.user_playlists("lea8z8w6s6rpdigkjh2rj789a")
+    playlists = sp.user_playlists(os.getenv("USER_ID"))
 
     while playlists:
         for i, playlist in enumerate(playlists["items"]):
