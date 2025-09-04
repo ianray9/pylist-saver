@@ -17,18 +17,28 @@ def get_playlist(sp: spotipy.Spotify, playlist_id: str) -> pd.DataFrame:
         "duration_ms",
         "popularity",
     ]
-    df = pd.DataFrame(columns=column_list)  # type: ignore
+    df = pd.DataFrame(columns=column_list)
 
-    playlist = sp.playlist_items(playlist_id)
-    for i, song in enumerate(playlist["items"]):  # type: ignore
+    results = sp.playlist_items(playlist_id)
+    tracks = results["items"]
+
+    while results["next"]:
+        results = sp.next(results)
+        tracks.extend(results["items"])
+
+    for i, song in enumerate(tracks):  # type: ignore
+        track = song.get("track")
+        if not track:
+            continue
+
         df.loc[i] = [
-            song["track_id"],
-            song["track_name"],
-            song["artist(s)"],
-            song["album_name"],
-            song["added_at"],
-            song["duration_ms"],
-            song["popularity"],
+            track.get("id"),
+            track.get("name"),
+            ", ".join(artist["name"] for artist in track.get("artists")),
+            track.get("album").get("name"),
+            song.get("added_at"),
+            track.get("duration_ms"),
+            track.get("popularity"),
         ]
 
     return df
