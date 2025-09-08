@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import pandas as pd
@@ -7,8 +8,9 @@ from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
 
 
-def get_playlist(sp: spotipy.Spotify, playlist_id: str) -> pd.DataFrame:
+def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
     column_list = [
+        "track_number",
         "track_id",
         "track_name",
         "artist(s)",
@@ -19,6 +21,11 @@ def get_playlist(sp: spotipy.Spotify, playlist_id: str) -> pd.DataFrame:
     ]
     df = pd.DataFrame(columns=column_list)
 
+    # Get playlist name
+    playlist_meta = sp.playlist(playlist_id)
+    playlist_name = playlist_meta.get("name", "unknown_playlist")
+
+    # Get playlist tracks
     results = sp.playlist_items(playlist_id)
     tracks = results["items"]
 
@@ -32,6 +39,7 @@ def get_playlist(sp: spotipy.Spotify, playlist_id: str) -> pd.DataFrame:
             continue
 
         df.loc[i] = [
+            i + 1,
             track.get("id"),
             track.get("name"),
             ", ".join(artist["name"] for artist in track.get("artists")),
@@ -41,10 +49,14 @@ def get_playlist(sp: spotipy.Spotify, playlist_id: str) -> pd.DataFrame:
             track.get("popularity"),
         ]
 
-    return df
+    # Create safe file name
+    safe_name = re.sub(r'[\\/*?:"<>|]', "_", playlist_name)
+    csv_name = f"{safe_name}_tracks.csv"
+    df.to_csv(csv_name, index=False)
+    print(f"{playlist_name} saved to {csv_name}")
 
 
-def list_playlists(sp: spotipy.Spotify) -> pd.DataFrame:
+def save_ids(sp: spotipy.Spotify) -> None:
     playlists = []
 
     # Load all playlists from user
@@ -61,7 +73,9 @@ def list_playlists(sp: spotipy.Spotify) -> pd.DataFrame:
         else:
             break
 
-    return pd.DataFrame(playlists)
+    id_df = pd.DataFrame(playlists)
+    id_df.to_csv("playlist_ids.csv", index=False)
+    print("Playlist names and ids are in playlist_ids.csv.")
 
 
 def auth_spotipy() -> spotipy.Spotify:

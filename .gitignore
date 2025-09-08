@@ -1,2 +1,5 @@
 .env
-playlist_ids.csv
+*.csv
+.cache
+__pycache__/
+
