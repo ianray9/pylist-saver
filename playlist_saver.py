@@ -44,6 +44,26 @@ def get_playlist(sp: spotipy.Spotify, playlist_id: str) -> pd.DataFrame:
     return df
 
 
+def list_playlists(sp: spotipy.Spotify) -> pd.DataFrame:
+    playlists = []
+
+    # Load all playlists from user
+    load_dotenv()
+    results = sp.user_playlists(user=os.getenv("USER_ID"))
+
+    # Append all playlist info to df
+    while results:
+        for item in results["items"]:
+            playlists.append({"name": item.get("name"), "id": item.get("id")})
+
+        if results.get("next"):
+            results = sp.next(results)
+        else:
+            break
+
+    return pd.DataFrame(playlists)
+
+
 def auth_spotipy() -> spotipy.Spotify:
     load_dotenv()
 
