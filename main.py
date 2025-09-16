@@ -1,6 +1,6 @@
 import sys
 
-from playlist_saver import auth_spotipy, save_ids, save_playlist
+from playlist_saver import auth_spotipy, print_menu, save_ids, save_playlist
 
 
 def main():
@@ -19,11 +19,7 @@ def main():
         sys.exit(1)
 
     while True:
-        print("Choose one of the following")
-        print("[1] Save all playlists")
-        print("[2] Save one playlist")
-        print("[3] Get playlist ids")
-        print("[4] Exit")
+        print_menu()
 
         match input("> ").strip():
             case "1":
@@ -49,7 +45,7 @@ def main():
             case _:
                 print("Unknow command, please try again")
 
-        print("\n")
+        input("\nPress Enter to continue...")
 
 
 if __name__ == "__main__":

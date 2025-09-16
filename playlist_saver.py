@@ -1,11 +1,14 @@
 import os
 import re
 import sys
+import textwrap
 
 import pandas as pd
 import spotipy
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
+
+from colors import Colors
 
 
 def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
@@ -107,3 +110,36 @@ def auth_spotipy() -> spotipy.Spotify:
             open_browser=True,
         )
     )
+
+
+def print_menu():
+    cli_header = textwrap.dedent(
+        """\
+██████╗ ██╗   ██╗██╗     ██╗███████╗████████╗
+██╔══██╗╚██╗ ██╔╝██║     ██║██╔════╝╚══██╔══╝
+██████╔╝ ╚████╔╝ ██║     ██║███████╗   ██║   
+██╔═══╝   ╚██╔╝  ██║     ██║╚════██║   ██║   
+██║        ██║   ███████╗██║███████║   ██║   
+╚═╝        ╚═╝   ╚══════╝╚═╝╚══════╝   ╚═╝   
+███████╗ █████╗ ██╗   ██╗███████╗██████╗     
+██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗    
+███████╗███████║██║   ██║█████╗  ██████╔╝    
+╚════██║██╔══██║╚██╗ ██╔╝██╔══╝  ██╔══██╗    
+███████║██║  ██║ ╚████╔╝ ███████╗██║  ██║    
+╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝    """
+    )
+
+    # Clear CLI
+    os.system("cls" if os.name == "nt" else "clear")
+
+    c = Colors()
+    print(c.set_color(cli_header.rstrip("\n"), "bold_green"), end="")
+
+    options = [
+        "Choose one of the following",
+        f"{c.set_color("[1]", "green")} Save all playlists",
+        f"{c.set_color("[2]", "green")} Save one playlist",
+        f"{c.set_color("[3]", "green")} Get playlist ids",
+        f"{c.set_color("[4]", "red")} Exit",
+    ]
+    print("\n".join(options))
