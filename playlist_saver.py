@@ -12,6 +12,28 @@ from spotipy.oauth2 import SpotifyOAuth
 from colors import Colors
 
 
+def save_all(sp: spotipy.Spotify) -> None:
+    save_all_tracks(sp)
+
+
+def save_all_tracks(sp: spotipy.Spotify) -> None:
+    load_dotenv()
+    playlists = sp.user_playlists(user=os.getenv("USER_ID"))
+
+    # Save all user playlists
+    while playlists:
+        for playlist in playlists["items"]:
+            save_playlist(sp, playlist["id"])
+        if playlists["next"]:
+            playlists = sp.next(playlists)
+        else:
+            playlists = None
+
+    c = Colors()
+    print("\n" + c.set_color("Done!", "green"))
+    print("All playlist track data saved in playlists directory")
+
+
 def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
     column_list = [
         "track_number",
@@ -57,12 +79,14 @@ def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
     Path("./playlists/").mkdir(parents=True, exist_ok=True)
 
     # Create safe file name
-    safe_name = re.sub(r'[\\/*?:"<>|]', "_", playlist_name)
-    safe_name = re.sub(r"\s+", "_", playlist_name)
-    csv_name = f"{safe_name}_tracks.csv"
+    safe_name = re.sub(r'[\\/*?:"<>|]', "-", playlist_name)
+    safe_name = re.sub(r"[\s+/]", "-", playlist_name)
+    csv_name = f"{safe_name}_tracks_{playlist_id}.csv"
     csv_path = f"playlists/{csv_name}"
+
+    c = Colors()
     df.to_csv(csv_path, index=False)
-    print(f"{playlist_name} saved to {csv_path}")
+    print(f"{c.set_color(playlist_name, "yellow")} saved to:\n\t{csv_path}")
 
 
 def save_ids(sp: spotipy.Spotify) -> None:

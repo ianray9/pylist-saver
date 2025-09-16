@@ -1,6 +1,7 @@
 import sys
 
-from playlist_saver import auth_spotipy, print_menu, save_ids, save_playlist
+from colors import Colors
+from playlist_saver import auth_spotipy, print_menu, save_all, save_ids, save_playlist
 
 
 def main():
@@ -24,6 +25,7 @@ def main():
         match input("> ").strip():
             case "1":
                 print("Saving all playlists...")
+                save_all(sp)
 
             case "2":
                 print("Enter Playlist ID", end="")

@@ -1,5 +1,6 @@
 .env
 *.csv
+*.zip
 .cache
 __pycache__/
 
