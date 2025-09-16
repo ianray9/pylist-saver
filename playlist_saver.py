@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import textwrap
+from pathlib import Path
 
 import pandas as pd
 import spotipy
@@ -52,11 +53,16 @@ def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
             track.get("popularity"),
         ]
 
+    # Make sure playlist dir is created
+    Path("./playlists/").mkdir(parents=True, exist_ok=True)
+
     # Create safe file name
     safe_name = re.sub(r'[\\/*?:"<>|]', "_", playlist_name)
+    safe_name = re.sub(r"\s+", "_", playlist_name)
     csv_name = f"{safe_name}_tracks.csv"
-    df.to_csv(csv_name, index=False)
-    print(f"{playlist_name} saved to {csv_name}")
+    csv_path = f"playlists/{csv_name}"
+    df.to_csv(csv_path, index=False)
+    print(f"{playlist_name} saved to {csv_path}")
 
 
 def save_ids(sp: spotipy.Spotify) -> None:
