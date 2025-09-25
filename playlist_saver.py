@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import spotipy
 from dotenv import load_dotenv
+from spotipy import SpotifyException
 from spotipy.oauth2 import SpotifyOAuth
 
 from colors import Colors
@@ -47,8 +48,16 @@ def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
     ]
     df = pd.DataFrame(columns=column_list)
 
-    # Get playlist name
-    playlist_meta = sp.playlist(playlist_id)
+    # Get try to get playlist with playlist_id
+    try:
+        playlist_meta = sp.playlist(playlist_id)
+    except SpotifyException as e:
+        if e.http_status == 400 and e.code == -1 and "Unsupported URL / URI" in str(e):
+            print("Unable to find playlist with that id :(")
+            return
+        else:
+            raise
+
     playlist_name = playlist_meta.get("name", "unknown_playlist")
 
     # Get playlist tracks
