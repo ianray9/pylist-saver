@@ -14,10 +14,11 @@ from colors import Colors
 
 
 def save_all(sp: spotipy.Spotify) -> None:
-    save_all_tracks(sp)
+    save_meta(sp)
+    save_all_playlists(sp)
 
 
-def save_all_tracks(sp: spotipy.Spotify) -> None:
+def save_all_playlists(sp: spotipy.Spotify) -> None:
     load_dotenv()
     playlists = sp.user_playlists(user=os.getenv("USER_ID"))
 
@@ -35,6 +36,73 @@ def save_all_tracks(sp: spotipy.Spotify) -> None:
     print("All playlist track data saved in playlists directory")
 
 
+def get_created_date(sp: spotipy.Spotify, id: str) -> str:
+    track_dates = []
+    results = sp.playlist_items(id)
+    tracks = results["items"]
+
+    while results["next"]:
+        results = sp.next(results)
+        tracks.extend(results["items"])
+
+    for song in tracks:  # type: ignore
+        track = song.get("track")
+        track_dates.append(song.get("added_at"))
+
+        if not track:
+            continue
+
+    # Sort list to get earliest date that a song was added
+    track_dates.sort()
+    return track_dates[0]
+
+
+def save_meta(sp: spotipy.Spotify) -> None:
+    load_dotenv()
+    playlists = sp.user_playlists(user=os.getenv("USER_ID"))
+
+    column_list = [
+        "playlist_id",
+        "name",
+        "owner",
+        "track_count",
+        "created_on",
+        "public",
+        "collaborative",
+        "description",
+        "image_url",
+    ]
+    df = pd.DataFrame(columns=column_list)
+
+    c = Colors()
+    while playlists:
+        for playlist in playlists["items"]:
+            df.loc[len(df)] = {
+                "playlist_id": playlist.get("id"),
+                "name": playlist.get("name"),
+                "owner": playlist.get("owner"),
+                "track_count": playlist.get("tracks")["total"],
+                "created_on": get_created_date(sp, playlist["id"]),
+                "public": playlist.get("public"),
+                "collaborative": playlist.get("collaborative"),
+                "description": playlist.get("description"),
+                "image_url": playlist.get("images")[0]["url"],
+            }
+
+            print(
+                f"Saved playlist meta data: {c.set_color(f"{playlist["name"]}", "yellow")}"
+            )
+
+        if playlists["next"]:
+            playlists = sp.next(playlists)
+        else:
+            playlists = None
+
+    csv_name = "playlist_meta_info.csv"
+    df.to_csv(csv_name)
+    print(f"{c.set_color("User playlist ", "green")} saved to:\n\t{csv_name}")
+
+
 def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
     column_list = [
         "track_number",
@@ -48,15 +116,8 @@ def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
     ]
     df = pd.DataFrame(columns=column_list)
 
-    # Get try to get playlist with playlist_id
-    try:
-        playlist_meta = sp.playlist(playlist_id)
-    except SpotifyException as e:
-        if e.http_status == 400 and e.code == -1 and "Unsupported URL / URI" in str(e):
-            print("Unable to find playlist with that id :(")
-            return
-        else:
-            raise
+    # Try to get playlist with playlist_id
+    playlist_meta = get_playlist_meta(sp, playlist_id)
 
     playlist_name = playlist_meta.get("name", "unknown_playlist")
 
@@ -68,13 +129,13 @@ def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
         results = sp.next(results)
         tracks.extend(results["items"])
 
-    for i, song in enumerate(tracks):  # type: ignore
+    for song in tracks:  # type: ignore
         track = song.get("track")
         if not track:
             continue
 
-        df.loc[i] = [
-            i + 1,
+        df.loc[len(df)] = [
+            len(df) + 1,
             track.get("id"),
             track.get("name"),
             ", ".join(artist["name"] for artist in track.get("artists")),
@@ -118,6 +179,18 @@ def save_ids(sp: spotipy.Spotify) -> None:
     id_df = pd.DataFrame(playlists)
     id_df.to_csv("playlist_ids.csv", index=False)
     print("Playlist names and ids are in playlist_ids.csv.")
+
+
+def get_playlist_meta(sp: spotipy.Spotify, id: str):
+    try:
+        playlist_meta = sp.playlist(id)
+    except SpotifyException as e:
+        if e.http_status == 400 and e.code == -1 and "Unsupported URL / URI" in str(e):
+            print("Unable to find playlist with that id :(")
+            return
+        else:
+            raise
+    return playlist_meta
 
 
 def auth_spotipy() -> spotipy.Spotify:
