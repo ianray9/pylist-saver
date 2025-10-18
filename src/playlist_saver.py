@@ -6,21 +6,19 @@ from pathlib import Path
 
 import pandas as pd
 import spotipy
-from dotenv import load_dotenv
 from spotipy import SpotifyException
 from spotipy.oauth2 import SpotifyOAuth
 
-from colors import Colors
+from src.colors import Colors
 
 
-def save_all(sp: spotipy.Spotify) -> None:
-    save_meta(sp)
-    save_all_playlists(sp)
+def save_all(sp: spotipy.Spotify, ENV_VARS: tuple) -> None:
+    save_meta(sp, ENV_VARS)
+    save_all_playlists(sp, ENV_VARS)
 
 
-def save_all_playlists(sp: spotipy.Spotify) -> None:
-    load_dotenv()
-    playlists = sp.user_playlists(user=os.getenv("USER_ID"))
+def save_all_playlists(sp: spotipy.Spotify, ENV_VARS: tuple) -> None:
+    playlists = sp.user_playlists(user=ENV_VARS[0])
 
     # Save all user playlists
     while playlists:
@@ -57,9 +55,8 @@ def get_created_date(sp: spotipy.Spotify, id: str) -> str:
     return track_dates[0]
 
 
-def save_meta(sp: spotipy.Spotify) -> None:
-    load_dotenv()
-    playlists = sp.user_playlists(user=os.getenv("USER_ID"))
+def save_meta(sp: spotipy.Spotify, ENV_VARS: tuple) -> None:
+    playlists = sp.user_playlists(user=ENV_VARS[0])
 
     column_list = [
         "playlist_id",
@@ -159,12 +156,10 @@ def save_playlist(sp: spotipy.Spotify, playlist_id: str) -> None:
     print(f"{c.set_color(playlist_name, "yellow")} saved to:\n\t{csv_path}")
 
 
-def save_ids(sp: spotipy.Spotify) -> None:
+def save_ids(sp: spotipy.Spotify, ENV_VARS: tuple) -> None:
     playlists = []
 
-    # Load all playlists from user
-    load_dotenv()
-    results = sp.user_playlists(user=os.getenv("USER_ID"))
+    results = sp.user_playlists(user=ENV_VARS[0])
 
     # Append all playlist info to df
     while results:
@@ -193,35 +188,36 @@ def get_playlist_meta(sp: spotipy.Spotify, id: str):
     return playlist_meta
 
 
-def auth_spotipy() -> spotipy.Spotify:
-    load_dotenv()
+def auth_spotipy(ENV_VARS: tuple) -> spotipy.Spotify:
+    client_id = ENV_VARS[1]
+    client_secret = ENV_VARS[2]
+    redirect_uri = ENV_VARS[3]
 
-    client_id = os.getenv("SPOTIPY_CLIENT_ID")
-    client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
-    redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
     scope = "playlist-read-private playlist-read-collaborative"
 
-    # Make sure all env vars are loaded
-    if not all([client_id, client_secret, redirect_uri]):
-        print(
-            "[ERROR]: .env file was not able to be loaded\n"
-            "Please make sure you created a .env file and entered the ALL the following:\n"
-            "\tSPOTIPY_CLIENT_ID=your-id\n"
-            "\tSPOTIPY_CLIENT_SECRET=your-secret\n"
-            "\tSPOTIPY_REDIRECT_URL=your-url\n"
+    try:
+        sp = spotipy.Spotify(
+            auth_manager=SpotifyOAuth(
+                client_id=client_id,
+                client_secret=client_secret,
+                redirect_uri=redirect_uri,
+                scope=scope,
+                open_browser=True,
+            )
         )
-
+    except SpotifyException as e:
+        print(
+            "[ERROR] SPOTIFY AUTHENTICATION FAILED!\n"
+            "Please make sure the .env info is correct.\n"
+            "Hint: A common mistake is that the ngrok URL is not correct.\n"
+            "      - Run 'ngrok http 8888'\n"
+            "      - Open the listed URL\n"
+            "      - Copy the HTTPS IRL into the redirect URI in \n"
+        )
+        print(f"Exception: {e}")
         sys.exit(1)
 
-    return spotipy.Spotify(
-        auth_manager=SpotifyOAuth(
-            client_id=client_id,
-            client_secret=client_secret,
-            redirect_uri=redirect_uri,
-            scope=scope,
-            open_browser=True,
-        )
-    )
+    return sp
 
 
 def print_menu():
