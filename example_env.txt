@@ -1,7 +1,7 @@
 # Information from Spotify Developers Portal
 SPOTIPY_CLIENT_ID=
 SPOTIPY_CLIENT_SECRET=
-SPOTIPY_REDIRECT_URL=
+SPOTIPY_REDIRECT_URI=
 
 # Spotify Account Username
 USER_ID=
