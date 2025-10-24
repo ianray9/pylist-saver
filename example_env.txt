@@ -3,5 +3,5 @@ SPOTIPY_CLIENT_ID=
 SPOTIPY_CLIENT_SECRET=
 SPOTIPY_REDIRECT_URI=
 
-# Spotify Account Username
+# Spotify Account Username (this is not your display name but the unique username id spotify gives you, see README for more details)
 USER_ID=
